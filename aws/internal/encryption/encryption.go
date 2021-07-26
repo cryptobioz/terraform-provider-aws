@@ -3,6 +3,7 @@ package encryption
 import (
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/terraform-providers/terraform-provider-aws/aws/internal/vault/helper/pgpkeys"
@@ -21,6 +22,12 @@ func RetrieveGPGKey(pgpKey string) (string, error) {
 			return "", fmt.Errorf("Error retrieving Public Key for %s: %w", pgpKey, err)
 		}
 		encryptionKey = publicKeys[pgpKey]
+	} else if _, err := url.ParseRequestURI(pgpKey); err == nil {
+		publicKey, err := pgpkeys.FetchHTTPPubkey(pgpKey)
+		if err != nil {
+			return "", fmt.Errorf("Error retrieving Public Key from %s: %w", pgpKey, err)
+		}
+		encryptionKey = publicKey
 	}
 
 	return encryptionKey, nil
